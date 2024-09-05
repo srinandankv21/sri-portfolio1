@@ -43,7 +43,7 @@ def generate_data(num_users):
     return df
 
 # Load the dataset with 30,000 users
-df = generate_data(num_users=30000)
+df = generate_data(num_users=300)
 
 st.subheader("Sample Energy Consumption Data")
 st.write(df.head())
