@@ -5,47 +5,47 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
 # Set the style for plots
-#plt.style.use('seaborn')
+plt.style.use('seaborn')
 
 # Title and Description
 st.title('Energy Consumption Clustering App')
 st.write("""
-This app performs K-means clustering on energy consumption data across different cities in a state over a year.
+This app performs K-means clustering on energy consumption data across different users in a state over a year.
 You can visualize the data before clustering, view the clusters, and see the cluster centroids.
 """)
 
 # Sidebar for user inputs
 st.sidebar.header("User Inputs")
 
-# User input for the number of cities
-num_cities = st.sidebar.slider('Number of Cities', min_value=10, max_value=100, value=50, step=10)
+# User input for the number of users
+num_users = 30000  # Fixed at 30,000 users
 
 # User input for the number of clusters
 num_clusters = st.sidebar.slider('Number of Clusters', min_value=2, max_value=10, value=4)
 
 # Function to generate sample data
 @st.cache
-def generate_data(num_cities):
+def generate_data(num_users):
     np.random.seed(42)  # For reproducibility
     
-    # Generate city names
-    cities = [f'City_{i}' for i in range(1, num_cities + 1)]
+    # Generate user IDs
+    users = [f'User_{i}' for i in range(1, num_users + 1)]
     
     # Generate a date range for a year
     dates = pd.date_range(start="2023-01-01", periods=365, freq="D")
     
     # Generate energy consumption data
     data = {
-        'Date': np.repeat(dates, num_cities),
-        'City': cities * len(dates),
-        'Energy Consumption (kWh)': np.random.randint(1000, 5000, size=len(dates) * num_cities)
+        'Date': np.repeat(dates, num_users),
+        'User': users * len(dates),
+        'Energy Consumption (kWh)': np.random.randint(100, 4000, size=len(dates) * num_users)
     }
     
     df = pd.DataFrame(data)
     return df
 
 # Load the dataset
-df = generate_data(num_cities)
+df = generate_data(num_users)
 
 st.subheader("Sample Energy Consumption Data")
 st.write(df.head())
@@ -53,15 +53,15 @@ st.write(df.head())
 # Data Preprocessing
 st.subheader("Data Preprocessing")
 
-# Aggregate data to get total and average energy consumption per city
-agg_df = df.groupby('City').agg({
+# Aggregate data to get total and average energy consumption per user
+agg_df = df.groupby('User').agg({
     'Energy Consumption (kWh)': ['sum', 'mean']
 }).reset_index()
 
 # Flatten the multi-level columns
-agg_df.columns = ['City', 'Total Energy Consumption (kWh)', 'Average Daily Consumption (kWh)']
+agg_df.columns = ['User', 'Total Energy Consumption (kWh)', 'Average Daily Consumption (kWh)']
 
-st.write("### Aggregated Data per City")
+st.write("### Aggregated Data per User")
 st.write(agg_df.head())
 
 # Feature Selection for Clustering
@@ -86,7 +86,7 @@ ax1.scatter(
 )
 ax1.set_xlabel('Total Energy Consumption (kWh)')
 ax1.set_ylabel('Average Daily Consumption (kWh)')
-ax1.set_title('Energy Consumption Across Cities (Before Clustering)')
+ax1.set_title('Energy Consumption Across Users (Before Clustering)')
 st.pyplot(fig1)
 
 # --- 2. After Clustering: Display Clusters in Different Colors ---
