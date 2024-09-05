@@ -1,3 +1,4 @@
+import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -6,6 +7,13 @@ from sklearn.preprocessing import MinMaxScaler
 
 # Set the style for plots
 #plt.style.use('seaborn')
+
+# Streamlit App Title and Description
+st.title('Energy Consumption Clustering for Houses')
+st.write("""
+This app clusters 300 houses based on their **Max** and **Min Energy Consumption per Day**.
+The energy data is scaled between 0 and 10, and K-means clustering is applied with 3 clusters.
+""")
 
 # Set random seed for reproducibility
 np.random.seed(42)
@@ -28,18 +36,22 @@ df = pd.DataFrame({
 })
 
 # Display the first few rows of the data
-print("Sample Data:")
-print(df.head())
+st.subheader('Sample Data')
+st.write(df.head())
 
 # --- Data Scaling ---
+st.subheader('Scaling Data between 0 and 10')
 # Scaling the 'Max' and 'Min' energy consumed between 0 and 10
 scaler = MinMaxScaler(feature_range=(0, 10))
 scaled_data = scaler.fit_transform(df[['Max Energy Consumed per Day (kWh)', 'Min Energy Consumed per Day (kWh)']])
 
 # Convert the scaled data back into a DataFrame
 scaled_df = pd.DataFrame(scaled_data, columns=['Max Energy Consumed per Day (Scaled)', 'Min Energy Consumed per Day (Scaled)'])
+st.write(scaled_df.head())
 
 # --- K-means Clustering ---
+st.subheader('K-means Clustering with 3 Clusters')
+
 num_clusters = 3
 kmeans = KMeans(n_clusters=num_clusters, random_state=42)
 df['Cluster'] = kmeans.fit_predict(scaled_df)
@@ -48,35 +60,52 @@ df['Cluster'] = kmeans.fit_predict(scaled_df)
 centroids = kmeans.cluster_centers_
 
 # --- Visualization ---
+st.subheader('Visualizations')
 
 # 1. Scatter Plot of Max and Min Energy Consumption Before Clustering
-plt.figure(figsize=(8, 6))
-plt.scatter(scaled_df['Max Energy Consumed per Day (Scaled)'], 
+st.write("### Max and Min Energy Consumption (Before Clustering, Scaled)")
+fig1, ax1 = plt.subplots(figsize=(8, 6))
+ax1.scatter(scaled_df['Max Energy Consumed per Day (Scaled)'], 
             scaled_df['Min Energy Consumed per Day (Scaled)'], 
             color='grey', alpha=0.6)
-plt.title('Max and Min Energy Consumption (Before Clustering, Scaled)')
-plt.xlabel('Max Energy Consumed per Day (Scaled)')
-plt.ylabel('Min Energy Consumed per Day (Scaled)')
-plt.show()
+ax1.set_title('Max and Min Energy Consumption (Before Clustering, Scaled)')
+ax1.set_xlabel('Max Energy Consumed per Day (Scaled)')
+ax1.set_ylabel('Min Energy Consumed per Day (Scaled)')
+st.pyplot(fig1)
 
 # 2. Scatter Plot of Clusters with Different Colors
-plt.figure(figsize=(8, 6))
+st.write("### K-means Clustering of Max and Min Energy Consumption")
+fig2, ax2 = plt.subplots(figsize=(8, 6))
+colors = plt.cm.get_cmap('tab10', num_clusters)
+
 for cluster in range(num_clusters):
     clustered_data = scaled_df[df['Cluster'] == cluster]
-    plt.scatter(clustered_data['Max Energy Consumed per Day (Scaled)'], 
+    ax2.scatter(clustered_data['Max Energy Consumed per Day (Scaled)'], 
                 clustered_data['Min Energy Consumed per Day (Scaled)'], 
                 label=f'Cluster {cluster + 1}', alpha=0.6)
     
 # Plot centroids
-plt.scatter(centroids[:, 0], centroids[:, 1], color='black', marker='X', s=200, label='Centroids')
+ax2.scatter(centroids[:, 0], centroids[:, 1], color='black', marker='X', s=200, label='Centroids')
+ax2.set_title('K-means Clustering of Max and Min Energy Consumption')
+ax2.set_xlabel('Max Energy Consumed per Day (Scaled)')
+ax2.set_ylabel('Min Energy Consumed per Day (Scaled)')
+ax2.legend()
+st.pyplot(fig2)
 
-plt.title('K-means Clustering of Max and Min Energy Consumption')
-plt.xlabel('Max Energy Consumed per Day (Scaled)')
-plt.ylabel('Min Energy Consumed per Day (Scaled)')
-plt.legend()
-plt.show()
+# Optional: Display final data with clusters
+st.subheader('Clustered Data')
+st.write(df.head())
 
-# Display final data with clusters
-print("Data with Cluster Labels:")
-print(df.head())
+# Optional: Download clustered data
+@st.cache
+def convert_df_to_csv(df):
+    return df.to_csv(index=False).encode('utf-8')
 
+csv = convert_df_to_csv(df)
+
+st.download_button(
+    label="Download Clustered Data as CSV",
+    data=csv,
+    file_name='clustered_energy_consumption.csv',
+    mime='text/csv',
+)
