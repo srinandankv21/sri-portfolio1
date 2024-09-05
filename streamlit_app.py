@@ -6,12 +6,12 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 # Set the style for plots
-#plt.style.use('seaborn')
+plt.style.use('seaborn')
 
 # Title and Description
 st.title('Energy Consumption Clustering App')
 st.write("""
-This app performs K-means clustering on energy consumption data across different users in a state over a year.
+This app performs K-means clustering based on the **Average Daily Energy Consumption** across different users in a state over a year.
 You can visualize the data before clustering, view the clusters, and see the cluster centroids.
 """)
 
@@ -56,60 +56,60 @@ st.subheader("Data Preprocessing")
 
 # Aggregate data to get total and average energy consumption per user
 agg_df = df.groupby('User').agg({
-    'Energy Consumption (kWh)': ['sum', 'mean']
+    'Energy Consumption (kWh)': ['mean']
 }).reset_index()
 
 # Flatten the multi-level columns
-agg_df.columns = ['User', 'Total Energy Consumption (kWh)', 'Average Daily Consumption (kWh)']
+agg_df.columns = ['User', 'Average Daily Consumption (kWh)']
 
 st.write("### Aggregated Data per User")
 st.write(agg_df.head())
 
-# Feature Selection for Clustering
-features = agg_df[['Total Energy Consumption (kWh)', 'Average Daily Consumption (kWh)']]
+# Select only 'Average Daily Consumption (kWh)' for clustering
+average_consumption = agg_df[['Average Daily Consumption (kWh)']]
 
 # Scaling the data between 0 and 10 using MinMaxScaler
 scaler = MinMaxScaler(feature_range=(0, 10))
-scaled_features = scaler.fit_transform(features)
+scaled_average_consumption = scaler.fit_transform(average_consumption)
 
 # K-means Clustering on scaled data
 kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-agg_df['Cluster'] = kmeans.fit_predict(scaled_features)
+agg_df['Cluster'] = kmeans.fit_predict(scaled_average_consumption)
 
 # Assign colors to clusters
 colors = plt.cm.get_cmap('tab10', num_clusters)
 
 # --- 1. Before Clustering: Display All Data Points ---
-st.subheader("1. Energy Consumption Before Clustering (Scaled Data)")
+st.subheader("1. Average Daily Consumption Before Clustering (Scaled Data)")
 
 fig1, ax1 = plt.subplots(figsize=(8, 6))
 ax1.scatter(
-    scaled_features[:, 0],
-    scaled_features[:, 1],
+    np.arange(len(scaled_average_consumption)),
+    scaled_average_consumption[:, 0],
     color='grey',
     alpha=0.6
 )
-ax1.set_xlabel('Total Energy Consumption (kWh) (Scaled)')
+ax1.set_xlabel('Users')
 ax1.set_ylabel('Average Daily Consumption (kWh) (Scaled)')
-ax1.set_title('Energy Consumption Across Users (Before Clustering, Scaled)')
+ax1.set_title('Average Daily Consumption Across Users (Before Clustering, Scaled)')
 st.pyplot(fig1)
 
 # --- 2. After Clustering: Display Clusters in Different Colors ---
-st.subheader("2. Energy Consumption After K-means Clustering (Scaled Data)")
+st.subheader("2. Average Daily Consumption After K-means Clustering (Scaled Data)")
 
 fig2, ax2 = plt.subplots(figsize=(8, 6))
 for cluster in range(num_clusters):
-    cluster_data = scaled_features[agg_df['Cluster'] == cluster]
+    cluster_data = scaled_average_consumption[agg_df['Cluster'] == cluster]
     ax2.scatter(
+        np.where(agg_df['Cluster'] == cluster),
         cluster_data[:, 0],
-        cluster_data[:, 1],
         color=colors(cluster),
         label=f'Cluster {cluster + 1}',
         alpha=0.6
     )
-ax2.set_xlabel('Total Energy Consumption (kWh) (Scaled)')
+ax2.set_xlabel('Users')
 ax2.set_ylabel('Average Daily Consumption (kWh) (Scaled)')
-ax2.set_title('K-means Clustering of Energy Consumption (Scaled)')
+ax2.set_title('K-means Clustering of Average Daily Consumption (Scaled)')
 ax2.legend()
 st.pyplot(fig2)
 
@@ -119,10 +119,10 @@ st.subheader("3. Cluster Centroids with Data Points (Scaled Data)")
 fig3, ax3 = plt.subplots(figsize=(8, 6))
 # Plot data points
 for cluster in range(num_clusters):
-    cluster_data = scaled_features[agg_df['Cluster'] == cluster]
+    cluster_data = scaled_average_consumption[agg_df['Cluster'] == cluster]
     ax3.scatter(
+        np.where(agg_df['Cluster'] == cluster),
         cluster_data[:, 0],
-        cluster_data[:, 1],
         color=colors(cluster),
         label=f'Cluster {cluster + 1}',
         alpha=0.6
@@ -131,15 +131,15 @@ for cluster in range(num_clusters):
 # Plot centroids
 centroids = kmeans.cluster_centers_
 ax3.scatter(
+    np.arange(num_clusters),
     centroids[:, 0],
-    centroids[:, 1],
     color='black',
     marker='X',
     s=200,
     label='Centroids'
 )
 
-ax3.set_xlabel('Total Energy Consumption (kWh) (Scaled)')
+ax3.set_xlabel('Users')
 ax3.set_ylabel('Average Daily Consumption (kWh) (Scaled)')
 ax3.set_title('K-means Clustering with Centroids (Scaled)')
 ax3.legend()
@@ -147,7 +147,7 @@ st.pyplot(fig3)
 
 # Display centroids data (scaled)
 st.subheader("Cluster Centroids (Scaled)")
-centroids_df = pd.DataFrame(centroids, columns=['Total Energy Consumption (kWh) (Scaled)', 'Average Daily Consumption (kWh) (Scaled)'])
+centroids_df = pd.DataFrame(centroids, columns=['Average Daily Consumption (kWh) (Scaled)'])
 centroids_df.index = [f'Cluster {i + 1}' for i in range(num_clusters)]
 st.write(centroids_df)
 
@@ -165,6 +165,6 @@ csv = convert_df_to_csv(agg_df)
 st.download_button(
     label="Download Clustered Data as CSV",
     data=csv,
-    file_name='clustered_energy_consumption.csv',
+    file_name='clustered_average_consumption.csv',
     mime='text/csv',
 )
