@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 # Set the style for plots
-plt.style.use('seaborn')
+#plt.style.use('seaborn')
 
 # Title and Description
 st.title('Energy Consumption Clustering App')
