@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 # Set the style for plots
@@ -67,57 +68,61 @@ st.write(agg_df.head())
 # Feature Selection for Clustering
 features = agg_df[['Total Energy Consumption (kWh)', 'Average Daily Consumption (kWh)']]
 
-# K-means Clustering
+# Scaling the data between 0 and 10 using MinMaxScaler
+scaler = MinMaxScaler(feature_range=(0, 10))
+scaled_features = scaler.fit_transform(features)
+
+# K-means Clustering on scaled data
 kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-agg_df['Cluster'] = kmeans.fit_predict(features)
+agg_df['Cluster'] = kmeans.fit_predict(scaled_features)
 
 # Assign colors to clusters
 colors = plt.cm.get_cmap('tab10', num_clusters)
 
 # --- 1. Before Clustering: Display All Data Points ---
-st.subheader("1. Energy Consumption Before Clustering")
+st.subheader("1. Energy Consumption Before Clustering (Scaled Data)")
 
 fig1, ax1 = plt.subplots(figsize=(8, 6))
 ax1.scatter(
-    agg_df['Total Energy Consumption (kWh)'],
-    agg_df['Average Daily Consumption (kWh)'],
+    scaled_features[:, 0],
+    scaled_features[:, 1],
     color='grey',
     alpha=0.6
 )
-ax1.set_xlabel('Total Energy Consumption (kWh)')
-ax1.set_ylabel('Average Daily Consumption (kWh)')
-ax1.set_title('Energy Consumption Across Users (Before Clustering)')
+ax1.set_xlabel('Total Energy Consumption (kWh) (Scaled)')
+ax1.set_ylabel('Average Daily Consumption (kWh) (Scaled)')
+ax1.set_title('Energy Consumption Across Users (Before Clustering, Scaled)')
 st.pyplot(fig1)
 
 # --- 2. After Clustering: Display Clusters in Different Colors ---
-st.subheader("2. Energy Consumption After K-means Clustering")
+st.subheader("2. Energy Consumption After K-means Clustering (Scaled Data)")
 
 fig2, ax2 = plt.subplots(figsize=(8, 6))
 for cluster in range(num_clusters):
-    cluster_data = agg_df[agg_df['Cluster'] == cluster]
+    cluster_data = scaled_features[agg_df['Cluster'] == cluster]
     ax2.scatter(
-        cluster_data['Total Energy Consumption (kWh)'],
-        cluster_data['Average Daily Consumption (kWh)'],
+        cluster_data[:, 0],
+        cluster_data[:, 1],
         color=colors(cluster),
         label=f'Cluster {cluster + 1}',
         alpha=0.6
     )
-ax2.set_xlabel('Total Energy Consumption (kWh)')
-ax2.set_ylabel('Average Daily Consumption (kWh)')
-ax2.set_title('K-means Clustering of Energy Consumption')
+ax2.set_xlabel('Total Energy Consumption (kWh) (Scaled)')
+ax2.set_ylabel('Average Daily Consumption (kWh) (Scaled)')
+ax2.set_title('K-means Clustering of Energy Consumption (Scaled)')
 ax2.legend()
 st.pyplot(fig2)
 
 # --- 3. Centroids Visualization ---
-st.subheader("3. Cluster Centroids with Data Points")
+st.subheader("3. Cluster Centroids with Data Points (Scaled Data)")
 
 fig3, ax3 = plt.subplots(figsize=(8, 6))
 # Plot data points
 for cluster in range(num_clusters):
-    cluster_data = agg_df[agg_df['Cluster'] == cluster]
+    cluster_data = scaled_features[agg_df['Cluster'] == cluster]
     ax3.scatter(
-        cluster_data['Total Energy Consumption (kWh)'],
-        cluster_data['Average Daily Consumption (kWh)'],
+        cluster_data[:, 0],
+        cluster_data[:, 1],
         color=colors(cluster),
         label=f'Cluster {cluster + 1}',
         alpha=0.6
@@ -134,15 +139,15 @@ ax3.scatter(
     label='Centroids'
 )
 
-ax3.set_xlabel('Total Energy Consumption (kWh)')
-ax3.set_ylabel('Average Daily Consumption (kWh)')
-ax3.set_title('K-means Clustering with Centroids')
+ax3.set_xlabel('Total Energy Consumption (kWh) (Scaled)')
+ax3.set_ylabel('Average Daily Consumption (kWh) (Scaled)')
+ax3.set_title('K-means Clustering with Centroids (Scaled)')
 ax3.legend()
 st.pyplot(fig3)
 
-# Display centroids data
-st.subheader("Cluster Centroids")
-centroids_df = pd.DataFrame(centroids, columns=['Total Energy Consumption (kWh)', 'Average Daily Consumption (kWh)'])
+# Display centroids data (scaled)
+st.subheader("Cluster Centroids (Scaled)")
+centroids_df = pd.DataFrame(centroids, columns=['Total Energy Consumption (kWh) (Scaled)', 'Average Daily Consumption (kWh) (Scaled)'])
 centroids_df.index = [f'Cluster {i + 1}' for i in range(num_clusters)]
 st.write(centroids_df)
 
