@@ -19,7 +19,7 @@ You can visualize the data before clustering, view the clusters, and see the clu
 st.sidebar.header("User Inputs")
 
 # User input for the number of users
-num_users = 30000  # Fixed at 30,000 users
+num_users = 300  # Fixed at 30,000 users
 
 # User input for the number of clusters
 num_clusters = st.sidebar.slider('Number of Clusters', min_value=2, max_value=10, value=4)
